@@ -11,4 +11,42 @@
     <button id ="recordButton">Start record</button>
     <button id ="stopButton" disabled>Stop Record</button>
     <div id="transcription"></div>
+    <script>
+        let mediaRecorder;
+        let audioChunks=[];
+
+        document.getElementById('recordButton').addEventListener('click', async()=>{
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true});
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.start();
+
+            mediaRecorder.addEventListener('dataavailable', event => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener('stop', async() =>{
+                //const audioBlob = new Blob(audioChunks, { type:'audio/wav'});
+                //audioChunks = [];
+                const formData = new FormData();
+                //formData.append('audio,audioBlob');
+
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                document.getElementById('transcription').innerText = result.transcription;                
+            });
+
+            document.getElementById('recordButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
+        });
+        document.getElementById('stopButton').addEventListener('click', () => { 
+                mediaRecorder.stop(); 
+                document.getElementById('recordButton').disabled = false; 
+                document.getElementById('stopButton').disabled = true; 
+        });
+
+    </script>
 {% endblock %}
