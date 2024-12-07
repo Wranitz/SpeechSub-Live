@@ -21,27 +21,28 @@
         document.getElementById('recordButton').addEventListener('click', async()=>{
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true});
             mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start(1000);
+            mediaRecorder.start(4000);
 
             mediaRecorder.addEventListener('dataavailable', event => {
                 if (isRecording){
                     audioChunks.push(event.data);
                     const audioBlob = new Blob([event.data], { type: 'audio/wav'});
                     const formData = new FormData();
-                    formData.append('audio, audioBlob');
+                    formData.append('audio', audioBlob);
 
                     fetch('/transcribe',{
                         method: 'POST',
                         body: formData
                     })
-                    .then(Response => response.json())
+                    .then(response => response.json())
                     .then(result => {
+                        console.log(result);
                         const transcriptionDiv = document.getElementById('transcription');
                         transcriptionDiv.innerText += '\n' + result.transcription; //append new transcription
                     });
                 }
             });
-            
+
             isRecording = true;
             document.getElementById('recordButton').disabeled = true;
             document.getElementById('stopButton').disabled = false;
