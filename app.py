@@ -30,6 +30,8 @@ def transcribe():
     try:
         #save the audio file
         audio_file.save(audio_path)
+        if os.path.getsize(audio_path) == 0:
+            raise Exception("Received empty audio file chunk")
     except Exception as e:
         print(f"Error saving audio file: {e}")
         return jsonify({'error': 'Failed to save audio file'})
@@ -39,6 +41,7 @@ def transcribe():
         with audioread.audio_open(audio_path) as f: 
             sr = f.samplerate 
             channels = f.channels 
+            print(f"Sample rate:{sr}, Channels:{channels}")
             
             audio_array = [] 
             for buf in f: 

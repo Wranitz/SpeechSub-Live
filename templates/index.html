@@ -21,7 +21,7 @@
         document.getElementById('recordButton').addEventListener('click', async()=>{
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true});
             mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start(1000);
+            mediaRecorder.start(3000);
 
             mediaRecorder.addEventListener('dataavailable', event => {
                 if (isRecording){
