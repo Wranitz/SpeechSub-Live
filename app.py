@@ -30,7 +30,7 @@ def transcribe():
     #save the audio file
     audio_file.save(audio_path)
 
-     # Read the audio file using soundfile
+     # Read the audio file using audioread
     try: 
         with audioread.audio_open(audio_path) as f: 
             sr = f.samplerate 
@@ -47,8 +47,8 @@ def transcribe():
             audio_array = audio_array.reshape((-1,channels)).mean(axis=1)
 
         #if audio is not 16000hz change it to 16khz
-        if sr !=16000:
-            audio_array = librosa.resample(audio_array, sr, 16000)
+        if sr != 16000:
+            audio_array = librosa.resample(audio_array, orig_sr=sr, target_sr=16000)
             sr = 16000
 
         input_values = processor(audio_array, return_tensors="pt", sampling_rate=16000).input_values 
@@ -59,7 +59,7 @@ def transcribe():
         print(f"Error reading audio file: {e}")
         return jsonify({'error' : 'Failed to read audio file'})
     finally:
-        # De;ete the temporary audio file
+        # Delete the temporary audio file
         if os.path.exists(audio_path):
             os.remove(audio_path)
 
