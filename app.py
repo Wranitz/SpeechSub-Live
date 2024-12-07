@@ -47,7 +47,7 @@ def transcribe():
         print(f"Error reading audio file:{e}")
         return jsonify({'error': 'Failed to read audio file'})
     
-    
+
     try:       
         audio_array = np.array(audio_array, dtype=np.float32)
 
@@ -65,8 +65,8 @@ def transcribe():
         predicted_ids = torch.argmax(logits, dim=-1) 
         transcription = processor.decode(predicted_ids[0]) 
     except Exception as e:
-        print(f"Error reading audio file: {e}")
-        return jsonify({'error' : 'Failed to read audio file'})
+        print(f"Error Loading Model: {e}")
+        return jsonify({'error' : 'Failed to Loading Model'})
     finally:
         # Delete the temporary audio file
         if os.path.exists(audio_path):
