@@ -25,10 +25,10 @@
             });
 
             mediaRecorder.addEventListener('stop', async() =>{
-                //const audioBlob = new Blob(audioChunks, { type:'audio/wav'});
-                //audioChunks = [];
+                const audioBlob = new Blob(audioChunks, { type:'audio/wav'});
+                audioChunks = [];
                 const formData = new FormData();
-                //formData.append('audio,audioBlob');
+                formData.append('audio', audioBlob);
 
                 const response = await fetch('/transcribe', {
                     method: 'POST',
