@@ -23,9 +23,17 @@ def transcribe():
     audio_file = request.files['audio'] 
     # Read the audio file using pydub 
     audio = AudioSegment.from_file(audio_file) 
+    #reshample the audio to 16000hz
+    audio = audio.set_frame_rate(16000)
+    #convert the audio to a numpy array
     audio_data = np.array(audio.get_array_of_samples()) 
-    samplerate = audio.frame_rate 
-    input_values = processor(audio_data, return_tensors="pt", sampling_rate=samplerate).input_values 
+    
+    if audio.channels > 1:
+        audio_data = audio_data.reshape((-1, audio.channels)).mean(axis=1)
+    
+    audio_data = audio_data / np.iinfo(audio_data.dtype).max
+
+    input_values = processor(audio_data, return_tensors="pt", sampling_rate=16000).input_values 
     logits = model(input_values).logits 
     predicted_ids = torch.argmax(logits, dim=-1) 
     transcription = processor.decode(predicted_ids[0]) 
