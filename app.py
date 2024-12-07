@@ -20,13 +20,11 @@ def index():
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
-    audio_file = request.files['audio']
-    #save the file temporarily
-    audio_path='static/uploaded_audio.wav'
-    audio_file.save(audio_path)
-
-    #Read the audio file
-    samplerate, audio_data = wavfile.read(audio_path) 
+    audio_file = request.files['audio'] 
+    # Read the audio file using pydub 
+    audio = AudioSegment.from_file(audio_file) 
+    audio_data = np.array(audio.get_array_of_samples()) 
+    samplerate = audio.frame_rate 
     input_values = processor(audio_data, return_tensors="pt", sampling_rate=samplerate).input_values 
     logits = model(input_values).logits 
     predicted_ids = torch.argmax(logits, dim=-1) 
