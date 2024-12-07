@@ -14,39 +14,44 @@
     <script>
         let mediaRecorder;
         let audioChunks=[];
+        let isRecording = false;
+
+        //Writing a js function on the event of click so that i will send audio data every second
 
         document.getElementById('recordButton').addEventListener('click', async()=>{
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true});
             mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start();
+            mediaRecorder.start(1000);
 
             mediaRecorder.addEventListener('dataavailable', event => {
-                audioChunks.push(event.data);
+                if (isRecording){
+                    audioChunks.push(event.data);
+                    const audioBlob = new Blob([event.data], { type: 'audio/wav'});
+                    const formData = new FormData();
+                    formData.append('audio, audioBlob');
+
+                    fetch('/transcribe',{
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(Response => response.json())
+                    .then(result => {
+                        const transcriptionDiv = document.getElementById('transcription');
+                        transcriptionDiv.innerText += '\n' + result.transcription; //append new transcription
+                    });
+                }
             });
-
-            mediaRecorder.addEventListener('stop', async() =>{
-                const audioBlob = new Blob(audioChunks, { type:'audio/wav'});
-                audioChunks = [];
-                const formData = new FormData();
-                formData.append('audio', audioBlob);
-
-                const response = await fetch('/transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                document.getElementById('transcription').innerText = result.transcription;                
-            });
-
-            document.getElementById('recordButton').disabled = true;
+            
+            isRecording = true;
+            document.getElementById('recordButton').disabeled = true;
             document.getElementById('stopButton').disabled = false;
-        });
-        document.getElementById('stopButton').addEventListener('click', () => { 
-                mediaRecorder.stop(); 
-                document.getElementById('recordButton').disabled = false; 
-                document.getElementById('stopButton').disabled = true; 
-        });
+        });    
 
+        document.getElementById('stopButton').addEventListener('click', () => {
+            isRecording = false;
+            mediaRecorder.stop();
+            document.getElementById('recordButton').disabeled = false;
+            document.getElementById('stopButton').disabled = true;
+        });
     </script>
 {% endblock %}
