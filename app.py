@@ -27,9 +27,13 @@ def transcribe():
     #define a permanent file path
     audio_path = "uploaded_audio_chunk.wav"
 
-    #save the audio file
-    audio_file.save(audio_path)
-
+    try:
+        #save the audio file
+        audio_file.save(audio_path)
+    except Exception as e:
+        print(f"Error saving audio file: {e}")
+        return jsonify({'error': 'Failed to save audio file'})
+    
      # Read the audio file using audioread
     try: 
         with audioread.audio_open(audio_path) as f: 
@@ -39,7 +43,12 @@ def transcribe():
             audio_array = [] 
             for buf in f: 
                 audio_array.extend(np.frombuffer(buf, dtype=np.int16)) 
-                
+    except Exception as e:
+        print(f"Error reading audio file:{e}")
+        return jsonify({'error': 'Failed to read audio file'})
+    
+    
+    try:       
         audio_array = np.array(audio_array, dtype=np.float32)
 
         #if audio is two channel change it to 1 channel
@@ -51,7 +60,7 @@ def transcribe():
             audio_array = librosa.resample(audio_array, orig_sr=sr, target_sr=16000)
             sr = 16000
 
-        input_values = processor(audio_array, return_tensors="pt", sampling_rate=16000).input_values 
+        input_values = processor(audio_array, return_tensors="pt", sampling_rate=sr).input_values 
         logits = model(input_values).logits 
         predicted_ids = torch.argmax(logits, dim=-1) 
         transcription = processor.decode(predicted_ids[0]) 
