@@ -1,0 +1,1 @@
+This is a Simple flask app for showing live voice their subtitle in realtime.
