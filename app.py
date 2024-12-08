@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 import torch
 from transformers import Wav2Vec2ForCTC, Wav2Vec2Processor
 import numpy as np
@@ -12,13 +12,6 @@ app = Flask(__name__)
 model_name = "jonatasgrosman/wav2vec2-large-xlsr-53-english"
 processor = Wav2Vec2Processor.from_pretrained(model_name) 
 model = Wav2Vec2ForCTC.from_pretrained(model_name)
-
-#make a home page pointer on '/' as index.html
-@app.route('/', methods=['POST','GET'])
-def index():
-    return render_template('index.html')
-
-
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
@@ -76,6 +69,27 @@ def transcribe():
             os.remove(audio_path)
 
     return jsonify({'transcription': transcription})
+
+
+@app.route('/start', methods=['POST']) 
+def start_recording(): 
+    session['recording'] = True 
+    return jsonify({'status': 'Recording started'}) 
+
+@app.route('/stop', methods=['POST']) 
+def stop_recording(): 
+    session['recording'] = False 
+    return jsonify({'status': 'Recording stopped'})
+
+
+#make a home page pointer on '/' as index.html
+@app.route('/', methods=['POST','GET'])
+def index():
+    return render_template('index.html')
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

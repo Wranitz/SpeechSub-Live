@@ -1,58 +1,73 @@
-{% extends 'base.html' %}
-
-{% block head %}
-
-<title>Speech to subtitle</title>
-
-{% endblock %}
-
-{% block body %}
-    <h1>Speech to Subtitles</h1>
-    <button id ="recordButton">Start record</button>
-    <button id ="stopButton" disabled>Stop Record</button>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Speech Transcription</title>
+</head>
+<body>
+    <h1>Real-time Speech Transcription</h1>
+    <button id="recordButton">Start Recording</button>
+    <button id="stopButton" disabled>Stop Recording</button>
     <div id="transcription"></div>
+
     <script>
         let mediaRecorder;
-        let audioChunks=[];
         let isRecording = false;
 
-        //Writing a js function on the event of click so that i will send audio data every second
-
-        document.getElementById('recordButton').addEventListener('click', async()=>{
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true});
+        document.getElementById('recordButton').addEventListener('click', async () => {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start(3000);
+            mediaRecorder.start(1000); // Create a new audio chunk every second
+
+            fetch('/start', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    isRecording = true;
+                    document.getElementById('recordButton').disabled = true;
+                    document.getElementById('stopButton').disabled = false;
+                });
 
             mediaRecorder.addEventListener('dataavailable', event => {
-                if (isRecording){
-                    audioChunks.push(event.data);
-                    const audioBlob = new Blob([event.data], { type: 'audio/wav'});
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob);
+                if (isRecording) {
+                    const audioBlob = new Blob([event.data], { type: 'audio/wav' });
+                    if (audioBlob.size > 0) {
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob);
 
-                    fetch('/transcribe',{
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        console.log(result);
-                        const transcriptionDiv = document.getElementById('transcription');
-                        transcriptionDiv.innerText += '\n' + result.transcription; //append new transcription
-                    });
+                        fetch('/transcribe', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.transcription) {
+                                const transcriptionDiv = document.getElementById('transcription');
+                                transcriptionDiv.innerText += '\n' + result.transcription;
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                        });
+                    } else {
+                        console.warn('Received empty audio chunk');
+                    }
                 }
             });
-
-            isRecording = true;
-            document.getElementById('recordButton').disabeled = true;
-            document.getElementById('stopButton').disabled = false;
-        });    
+        });
 
         document.getElementById('stopButton').addEventListener('click', () => {
-            isRecording = false;
-            mediaRecorder.stop();
-            document.getElementById('recordButton').disabeled = false;
-            document.getElementById('stopButton').disabled = true;
+            fetch('/stop', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.status);
+                    isRecording = false;
+                    mediaRecorder.stop();
+                    document.getElementById('recordButton').disabled = false;
+                    document.getElementById('stopButton').disabled = true;
+                });
         });
     </script>
-{% endblock %}
+</body>
+</html>
