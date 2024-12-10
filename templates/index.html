@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block body %}
+
     <h1>Real-time Speech Transcription</h1>
     <button id="recordButton">Start Recording</button>
     <button id="stopButton" disabled>Stop Recording</button>
@@ -20,22 +21,12 @@
             socket.emit('start');
             document.getElementById('recordButton').disabled = true;
             document.getElementById('stopButton').disabled = false;
+        });
 
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-                const mediaRecorder = new MediaRecorder(stream);
-                mediaRecorder.start();
-
-                mediaRecorder.addEventListener('dataavailable', event => {
-                    socket.emit('audio_data', event.data);
-                });
-
-                document.getElementById('stopButton').addEventListener('click', () => {
-                    mediaRecorder.stop();
-                    socket.emit('stop');
-                    document.getElementById('recordButton').disabled = false;
-                    document.getElementById('stopButton').disabled = true;
-                });
-            });
+        document.getElementById('stopButton').addEventListener('click', () => {
+            socket.emit('stop');
+            document.getElementById('recordButton').disabled = false;
+            document.getElementById('stopButton').disabled = true;
         });
 
         socket.on('status', (data) => {
@@ -47,6 +38,5 @@
             transcriptionDiv.innerText += '\n' + data.transcription;
         });
     </script>
-
 
 {% endblock %}
