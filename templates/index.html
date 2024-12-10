@@ -7,67 +7,46 @@
 {% endblock %}
 
 {% block body %}
-    <h1>Speech to Subtitles</h1>
-    <button id ="recordButton">Start record</button>
-    <button id ="stopButton" disabled>Stop Record</button>
+    <h1>Real-time Speech Transcription</h1>
+    <button id="recordButton">Start Recording</button>
+    <button id="stopButton" disabled>Stop Recording</button>
     <div id="transcription"></div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.3/socket.io.min.js"></script>
     <script>
-        let mediaRecorder;
-        let isRecording = false;
+        const socket = io();
 
-        document.getElementById('recordButton').addEventListener('click', async () => {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            mediaRecorder.start(1000); // Create a new audio chunk every second
+        document.getElementById('recordButton').addEventListener('click', () => {
+            socket.emit('start');
+            document.getElementById('recordButton').disabled = true;
+            document.getElementById('stopButton').disabled = false;
 
-            fetch('/start', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    console.log(data.status);
-                    isRecording = true;
-                    document.getElementById('recordButton').disabled = true;
-                    document.getElementById('stopButton').disabled = false;
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                const mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.start();
+
+                mediaRecorder.addEventListener('dataavailable', event => {
+                    socket.emit('audio_data', event.data);
                 });
 
-            mediaRecorder.addEventListener('dataavailable', event => {
-                if (isRecording) {
-                    const audioBlob = new Blob([event.data], { type: 'audio/wav' });
-                    if (audioBlob.size > 0) {
-                        const formData = new FormData();
-                        formData.append('audio', audioBlob);
-
-                        fetch('/transcribe', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(result => {
-                            if (result.transcription) {
-                                const transcriptionDiv = document.getElementById('transcription');
-                                transcriptionDiv.innerText += '\n' + result.transcription;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                        });
-                    } else {
-                        console.warn('Received empty audio chunk');
-                    }
-                }
-            });
-        });
-
-        document.getElementById('stopButton').addEventListener('click', () => {
-            fetch('/stop', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    console.log(data.status);
-                    isRecording = false;
+                document.getElementById('stopButton').addEventListener('click', () => {
                     mediaRecorder.stop();
+                    socket.emit('stop');
                     document.getElementById('recordButton').disabled = false;
                     document.getElementById('stopButton').disabled = true;
                 });
+            });
+        });
+
+        socket.on('status', (data) => {
+            console.log(data.status);
+        });
+
+        socket.on('transcription', (data) => {
+            const transcriptionDiv = document.getElementById('transcription');
+            transcriptionDiv.innerText += '\n' + data.transcription;
         });
     </script>
+
+
 {% endblock %}
