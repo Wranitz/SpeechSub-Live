@@ -76,6 +76,7 @@ def start_recording():
     session['recording'] = True 
     return jsonify({'status': 'Recording started'}) 
 
+
 @app.route('/stop', methods=['POST']) 
 def stop_recording(): 
     session['recording'] = False 
