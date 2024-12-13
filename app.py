@@ -50,7 +50,8 @@ def handle_audio_stream(data):
         predicted_ids = torch.argmax(logits, dim=-1) 
         transcription = processor.decode(predicted_ids[0]) 
     except Exception as e: 
-        print(f"Error transcribing audio: {e}") return 
+        print(f"Error transcribing audio: {e}") 
+        return 
     
     
     try: 
